@@ -1,778 +1,385 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
+  <meta charset="utf-8" />
+  <title>Rohan Kumar Dubey — Hacker Terminal Portfolio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Senior Data Engineer — real-time data, streaming, storage, low-latency systems." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <!-- VT323 = retro CRT-ish monospace; fallback to Fira Code if you prefer -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
 
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Data Engineer | B-Tech in electrical and elctronics Engineering">
-  <meta name="author" content="Rohan Kumar dubey <Rohankumardubey497@gmail.com>">
+  <!-- jQuery Terminal styles -->
+  <link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css" />
 
-  <title>Portfolio - ROHAN KUMAR DUBE</title>
+  <style>
+    /* =================== THEME TOKENS =================== */
+    :root {
+      /* hacker (default) */
+      --bg: #050B06;              /* deep black-green */
+      --fg: #C9FFD7;              /* pale mint text */
+      --accent: #31FF74;          /* neon green */
+      --dim: #6aff9a;             /* dimmer green */
+      --link: #59ffa3;            /* link green */
+      --shadow: 0 0 8px rgba(49,255,116,.55), 0 0 24px rgba(49,255,116,.25);
+    }
+    .theme-dark {
+      --bg: #0b0f14;
+      --fg: #e6edf3;
+      --accent: #3fb950;
+      --dim: #8b949e;
+      --link: #58a6ff;
+      --shadow: 0 0 8px rgba(63,185,80,.35);
+    }
+    .theme-light {
+      --bg: #f6f8fa;
+      --fg: #0b0f14;
+      --accent: #1f6feb;
+      --dim: #57606a;
+      --link: #0969da;
+      --shadow: none;
+    }
 
-  <!-- Bootstrap core CSS -->
-  <link href="static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    /* =================== LAYOUT =================== */
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: "VT323", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      overflow: hidden; /* keep matrix canvas fixed */
+    }
+    #matrix {
+      position: fixed; inset: 0;
+      z-index: 0; /* behind terminal */
+      display: block;
+    }
+    #app {
+      position: relative; z-index: 2;
+      height: 100%;
+      filter: drop-shadow(0 0 0.25rem rgba(49,255,116,0.3));
+    }
 
-  <!-- Custom fonts for this template -->
-  <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Muli:400,400i,800,800i" rel="stylesheet">
-  <link href="static/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    /* CRT fx: vignette + scanlines + subtle flicker */
+    .crt::before, .crt::after {
+      content: ""; pointer-events: none; position: fixed; inset: 0; z-index: 1;
+    }
+    .crt::before {
+      background:
+        radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.85) 100%);
+      mix-blend-mode: overlay;
+    }
+    .crt::after {
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.12) 0px,
+          rgba(0,0,0,0.12) 2px,
+          rgba(0,0,0,0.08) 3px,
+          rgba(0,0,0,0.08) 4px
+        );
+      animation: scan 9s linear infinite, flicker 2.2s infinite steps(60);
+      opacity: .35;
+    }
+    @keyframes scan {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 80%, 100% { opacity: .35; }
+      20%, 22% { opacity: .25; }
+      24% { opacity: .38; }
+    }
 
-  <!-- Custom styles for this template -->
-  <link href="static/css/resume.css" rel="stylesheet">
-  <link rel="shortcut icon" href="static/img/r.png" type="image/x-icon">
+    /* jQuery Terminal overrides */
+    .terminal, .cmd {
+      font-size: 20px; line-height: 1.35;
+      text-shadow: var(--shadow);
+      color: var(--fg);
+    }
+    .terminal {
+      background: transparent !important;
+    }
+    .terminal .prompt { color: var(--accent); }
+    .terminal .cursor {
+      background: var(--accent) !important;
+      box-shadow: 0 0 8px var(--accent), 0 0 18px rgba(49,255,116,.6);
+    }
+    .terminal a { color: var(--link); text-decoration: none; border-bottom: 1px dotted currentColor; }
+    .terminal a:hover { text-decoration: underline; }
+    ::selection { background: rgba(49,255,116,.35); color: #08150d; }
+
+    /* Subtle welcome toast */
+    .hint {
+      position: absolute; inset: auto 1rem 1rem auto; z-index: 3;
+      color: var(--dim); opacity: .9; font-size: 16px; user-select: none;
+      text-shadow: var(--shadow);
+      background: rgba(0,0,0,.25); border: 1px solid rgba(49,255,116,.25);
+      padding: .35rem .55rem; border-radius: .5rem; backdrop-filter: blur(3px);
+    }
+  </style>
 </head>
-<body id="page-top">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
-    <a class="navbar-brand js-scroll-trigger" href="#page-top">
-      <span class="d-block d-lg-none text-white subheading">Rohan Kumar Dubey</span>
-      <span class="d-none d-lg-block">
-        <img class="img-fluid img-profile rounded-circle mx-auto mb-2" src="static/img/ProfilePic.JPG" alt="">
-      </span>
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#about">About</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#skills">Skills</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#experience">Experience</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#education">Education</a>
-        </li>
-         <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#certificates">Certificates</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#projects">Projects</a>
-        </li> 
-        <li class="nav-item">
-          <a class="nav-link js-scroll-trigger" href="#awards">ACHIEVEMENTS &amp; ACCOLADES</a>
-        </li>
-        <a href="https://github.com/rohankumardubey" class="text-dark" target="_blank" >
-          <i class="fab fa-github-square fa-2x " style="font-size: 70px;"></i>
-        </a>   
-      </ul>
-    </div>
-  </nav>
-  <div class="container-fluid p-0">
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="about">
-      <div class="w-100">
-        <h1 class="mb-0">Rohan
-          <span class="text-primary"><pr>&nbsp</pr>Kumar<pr>&nbsp</pr>Dubey</span>
-        </h1>
-        <div class="subheading mb-5">
-          Hyderabad, India.  <pr>&nbsp&nbsp&nbsp&nbsp&nbsp</pr>
-          <a href="mailto:Rohankumardubey497@gmail.com">   Email : Rohankumardubey497@gmail.com</a>
-          <a><pr>&nbsp&nbsp&nbsp&nbsp&nbsp</pr>Phone : +91-7093123447</a>
-        </div>
-        <p class="lead mb-5"><p><b>I am a Senior Big Data Engineer at PokerStars, where I provide in-house solutions and services to support real-time data needs and activities in the online gaming ecosystem. I leverage my skills in Java, Python, Apache Flink, Apache Spark, AWS, and other big data technologies to create and maintain scalable and reliable data pipelines, architectures, and platforms. With over six years of experience in software development and data engineering, I have worked on various SAAS products and data-driven projects for leading companies such as Experian, Model N, Carelon Global Solutions, and Legato Health Technologies. I have a Bachelor of Technology degree in Electrical and Electronics Engineering from Mahatma Gandhi Institute of Technology. I am passionate about solving problems faced while integrating large-scale distributed systems, concurrent programming, and designing low-latency systems. My goal is to deliver innovative and impactful solutions that enhance data quality, performance, and insights. I am an open-source enthusiast and contributor.</p>
-        </p>
-        <div class="social-icons">
-          
-          <a href="https://github.com/rohankumardubey/" target="_blank">
-            <i class="fab fa-github"></i>
-          </a>
-          <a href="https://github.com/rohankumar997/" target="_blank">
-            <i class="fab fa-github-alt"></i>
-          </a>
-          <a href="https://twitter.com/rohanku43485614/" target="_blank">
-            <i class="fab fa-twitter"></i>
-          </a>
-          
-          <a href="https://www.linkedin.com/in/rohan-kumar-dubey-3a9a31156/" target="_blank">
-            <i class="fab fa-linkedin"></i>
-          </a>
-          <a href="https://www.facebook.com/rohan.kumar.188478" target="_blank">
-            <i class="fab fa-facebook"></i>
-          </a>
-          <a href="https://www.instagram.com/rohan.kumar_dubey/" target="_blank">
-            <i class="fab fa-instagram"></i>
-          </a>
-        </div>
-      </div>
-    </section>
-    <hr class="m-0">
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="skills">
-      <div class="w-100">
-        <h2 class="mb-5">Skills</h2>
+<body class="crt">
+  <!-- Matrix rain background -->
+  <canvas id="matrix" aria-hidden="true"></canvas>
 
-        <div class="subheading mb-3">Programming Languages &amp; Tools & Libraries</div>
-        <ul class="list-inline dev-icons">
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/python/python-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/java/java-horizontal.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://cdn.worldvectorlogo.com/logos/c.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://img.icons8.com/dusk/344/scala.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/php/php-horizontal.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/javascript/javascript-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/w3_html5/w3_html5-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/gnu_bash/gnu_bash-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/amazon_aws/amazon_aws-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/linux/linux-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="30" src="https://www.vectorlogo.zone/logos/mysql/mysql-horizontal.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="30"src="https://www.vectorlogo.zone/logos/postgresql/postgresql-horizontal.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/apache_spark/apache_spark-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/apache_hadoop/apache_hadoop-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/apache_hive/apache_hive-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/mongodb/mongodb-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/mariadb/mariadb-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/apache_kafka/apache_kafka-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/jetbrains/jetbrains-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://img.icons8.com/color/344/intellij-idea.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://img.icons8.com/color/344/pycharm.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/visualstudio_code/visualstudio_code-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://img.icons8.com/color/344/teradata.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://upload.wikimedia.org/wikipedia/commons/b/b6/PuTTY_icon_128px.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://upload.wikimedia.org/wikipedia/commons/d/de/WinSCP_Logo.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://cdn.worldvectorlogo.com/logos/sublime-text.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/vim/vim-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://img.icons8.com/color/344/notepad-plus-plus.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://upload.wikimedia.org/wikipedia/commons/0/0b/UltraEditLogo.png"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/github/github-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/apache/apache-official.svg"></i>
-          </li>          
-          <li class="list-inline-item">
-            <i class="fab"><img height="30" src="https://www.vectorlogo.zone/logos/djangoproject/djangoproject-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/pocoo_flask/pocoo_flask-ar21.svg"></i>
-          </li> 
-           <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/opensource/opensource-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/redhat/redhat-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/gnu/gnu-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/gnome/gnome-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/bitbucket/bitbucket-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/gitlab/gitlab-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/atlassian_jira/atlassian_jira-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/git-scm/git-scm-ar21.svg"></i>
-          </li>           
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/linux/linux-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/ubuntu/ubuntu-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/centos/centos-ar21.svg"></i>
-          </li> 
-          <li class="list-inline-item">
-            <i class="fab"><img height="50" src="https://www.vectorlogo.zone/logos/getbootstrap/getbootstrap-ar21.svg"></i>
-          </li> 
-        </ul>
-        <div class="subheading mb-3">Core Skills</div>
-        <ul class="fa-ul mb-0">
-          <li>
-            <i class="fa-li fa fa-check"></i>
-            Big Data Frameworks: Apache Spark, Apache Hive, Apache Kafka, Apache Hadoop, Apache NiFi, Nifi Registry, AWS, Delta Lake, Apache HBase, Apache Pig, Apache Sqoop, Apache Oozie, Apache Flume, Docker, Kubernetes, Dremio, Teradata
-          </li>
-          <li>
-            <i class="fa-li fa fa-check"></i>
-            Programming Languages: JAVA, PYTHON, SCALA, GO, SQL, SHELL SCRIPT, C++.
-          </li>
-          <li>
-              <i class="fa-li fa fa-check"></i>
-              Pipeline development and deployment (CI/CD)
-          </li>
-        <li>
-          <i class="fa-li fa fa-check"></i>
-          Designing an ETL pipeline using Informatica
-      </li>
-          <li>
-              <i class="fa-li fa fa-check"></i>
-              Object Oriented Programming (OOPS) 
-          </li>
-          <li>
-            <i class="fa-li fa fa-check"></i>
-            Open source contribution 
-          </li>
-          <li>
-            <i class="fa-li fa fa-check"></i>
-            Business Intelligence Reporting 
-          </li>
-          <li>
-            <i class="fa-li fa fa-check"></i>
-            Web scraping and web automation
-          </li>
-          <li>   
-        </ul>
-      </div>
-    </section>
-    <hr class="m-0">
-    <section class="resume-section p-3 p-lg-5 d-flex justify-content-center" id="experience">
-      <div class="w-100">
-        <h2 class="mb-5">Experience</h2>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-              <h3 class="mb-0">Senior Big Data Engineer</h3>
-              <div class="subheading mb-3">Poker Stars</div>
-              <a href="https://www.pokerstars.com/">www.pokerstars.com</a>
-              <p>As member of the RAPID team, which is in charge of providing in-house solutions and services to other departments in support of their real-time data needs and responsible for gathering information from processing and monitoring real-time activity in the Stars Group Poker game ecosystem via real-time big data technology  for Business Events architecture, Customer Profiles, EventGens, Personalised Poker Recommenders, and Enhanced Data Science capabilities.
-                <br></br>
-                TECH STACK: Java, Python, Apache Flink, Apache Spark, Amazon Web Services, AWS EC2, AWS DynamoDB, Amazon Kinesis Data Analytics, Amazon Kinesis, Apache Kafka, Apache Hive, Hadoop, Hadoop Yarn, Delta Lake, Apache Iceberg, Big Data, ETL, REST APIs, PostgreSQL, Jenkins, Machine Learning, AWS Athena, Kubernetes, Prometheus, Spring Boot, Grafana, Docker AWS lambda, Data Warehousing, Git, Maven.
-              </p>
-            </div>
-            <div class="resume-date text-md-right">
-              <span class="text-primary">October 2023 - Present</span>
-            </div>
-          </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-              <h3 class="mb-0">Senior Software Developer</h3>
-              <div class="subheading mb-3">Experian PLC</div>
-              <a href="https://www.experian.com/">www.experian.com</a>
-              <p>Worked on a Large Scale SAAS product as a Backend and data Engineer in the Ascend Intelligence Service (AIS) Team. 
-                Ascend Intelligence Service(AIS) is a Global Analytics Product line intended to support the end-to-end modeling needs of Clients from loan originations to collections.
-                The AIS web application consists of an Online interactive Platform powered by Spring Boot, Apache Spark, AWS EC2, and Kubernetes. Python, Java, Scala, AKKA framework, Jupyter Notebook (instances deployed on Kubernetes), and SparkSQL. 
-                which can be used to develop a range of machine learning models, produce SQL reports, and tables, and share those through an online application where clients can log into and view the Dashboards in UI. 
-                Ascend Intelligence Services™ (AIS) uses Big data and AI/ML to help you make the most informed and profitable decisions.
-                <br></br>
-                TECH STACK: Java, Scala, Python, Apache Spark, Amazon Web Services, AWS EC2, Apache Kafka, Apache Hive, Apache Flink, Hadoop, Apache Spark Streaming, Delta Lake, Apache Iceberg, Airbyte, Big Data, ETL, REST APIs, PostgreSQL, Jenkins,
-                Machine Learning, AWS Athena, Kubernetes, Prometheus, Grafana, Docker AWS lambda, Data Warehousing, Git, Maven.
-              </p>
-            </div>
-            <div class="resume-date text-md-right">
-              <span class="text-primary">April 2023 - September 2023</span>
-            </div>
-          </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">Member of Technical Staff</h3>
-            <div class="subheading mb-3">Model N Software Pvt. Ltd.</div>
-            <a href="https://www.modeln.com/">www.modeln.com</a>
-            <p>Worked on the SAAS Product Development team(Integration Service). Which enables communication between different entities within the ecosystem using the REST API calls (Spring Boot).
-              This will enable the data movement across different platforms using the event streaming platform (Apache Kafka) and processing the obtained data using the Data processing framework (Apache Spark)
-              through which ACID transactions on delta lakes (Delta.io) can be possible and utilizing live and interactive queries on finally processed data using Data lake engine (Dremio).
-              <br></br>
-              TECH STACK: Java 11, Scala, Python, Apache Spark, Apache Kafka, Apache Hadoop, Apache Hive, Apache NIFI, Spring Boot, Nifi-Registry, Nifi-Tool-Kit, AWS S3, AWS EMR,
-              AWS GLUE, AWS Athena, AWS lambda, AWS Secret Manager, Amazon Redshift, Amazon RDS, AWS Athena, AWS Lambda, Prometheus, Delta Lake, PostgreSQL, Dremio, Jenkins, ETL, Temporal, Docker, Kubernetes, Flyway, Maven, Fabric8, Git, Github.
-            </p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">July 2021 - March 2023</span>
-          </div>
-        </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">Software Engineer</h3>
-            <div class="subheading mb-3">Carelon Global Solutions LLP</div>
-            <a href="https://www.carelonglobal.com/">www.carelonglobal.com</a>
-            <p>Worked on Medicare/Medicaid initiative to have clinical intervention data, core administrative data(membership, claims, provider data), CMS-originated data
-             from the different data Marts to aggregate and perform insights so that they can maximize Medicare revenue and reduce Medicare administrative costs.
-              <br></br>
-              TECH STACK: Scala, Java 8, Python, Shell Script, SQL, Apache Spark, Apache Hadoop, Apache Hive, Apache HBase, Apache Ranger, Apache NiFi, Amazon Web Services (AWS), AWS S3, AWS EMR,
-              AWS GLUE, AWS Secret Manager, AWS Athena, AWS lambda, Amazon Redshift, Amazon RDS, Informatica, Teradata, Control-M, Bitbucket.</p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">July 2020 - June 2021</span>
-          </div>
-        </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">Associate Software Engineer</h3>
-            <div class="subheading mb-3">Legato Health Technologies LLP</div>
-            <a href="https://ui.dr.awse2.legatohealth.com/leadership/">www.legatohealth.com</a>
-            <p>Designed an end-to-end data processing framework where RAW data is processed to obtain the desired format and Published the formatted data to Dashboard using Reporting Tool Tableau.
-              Performed ETL(Extract Transform Load) using Teradata and Extract Transform Tool (Informatica) for Reducing the MEDICARE Administration costs.
-              <br></br>
-              TECH STACK: Amazon Web Services (AWS), Big Data, Python (Programming Language), Apache Spark, Apache Hadoop, Apache Hive, Apache Oozie, AWS S3, AWS EMR,
-              AWS GLUE, AWS Secret Manager, AWS Athena, AWS lambda, Amazon Redshift, Amazon RDS, PostgreSQL, Apache Pig, Apache NiFi, Apache Sqoop, Teradata, Shell Scripting, SQL, Informatica, Control-M, Bitbucket.</p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">September 2018 - June 2020</span>
-          </div>
-        </div>
-    </section>
-    <hr class="m-0">
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="education">
-      <div class="w-100">
-        <h2 class="mb-5">Education</h2>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">MAHATMA GANDHI INSTITUTE OF TECHNOLOGY, Hyderabad</h3>
-            <div class="subheading mb-3">bachelor of technology (Electrical and Electronics Engineering) </div>
-            <div></div>
-            <p></p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">2014 - 2018</span>
-          </div>
-        </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">NARAYANA JUNIOR COLLEGE, Hyderabad</h3>
-            <div class="subheading mb-3">INTERMEDIATE (MATHS,PHYSICS,CHEMISTRY)</div>
-            <div></div>
-            <p></p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">2012-2014</span>
-          </div>
-        </div>
-        <div class="resume-item d-flex flex-column flex-md-row justify-content-between mb-5">
-          <div class="resume-content">
-            <h3 class="mb-0">SRI KRISHNAVENI TALENT SCHOOL, Hyderabad</h3>
-            <div class="subheading mb-3">Secondary School Certificate</div>
-            <div></div>
-            <p></p>
-          </div>
-          <div class="resume-date text-md-right">
-            <span class="text-primary">2011-2012</span>
-          </div>
-        </div>
-      </div>
-    </section>
-    <hr class="m-0">
-<!-- Certificates -->
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="certificates">
-      <div class="w-100">
-        <h2 class="mb-5">Certificates</h2>
-        <ul class="fa-ul mb-0">
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://www.coursera.org/account/accomplishments/certificate/UBDRC3U3NRUW"> Creating Multi Task Models With Keras(Coursera)</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/certificate_aws_fundamentals.pdf"> AWS DEVELOPER</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/CISCO_IOT_certificate.pdf">CISCO (INTERNET OF THINGS)</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/CISSP-Certified.pdf">CISSP Certificate</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/DATA_SCIENCE_Certificate.pdf">DATA SCIENCE USING PYTHON</a>  
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/DATA_STUDIO_CERTIFICATE.pdf">DATA STUDIO (Google)</a>
-          <li>
-            <i class="fa-li fa fa-certificate"></i>        
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/Google%20Web%20Designer%20Basics%20_CERTI.pdf">WEB DESIGNER</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>        
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/Google_Cloud_Platform_Business_Professional.pdf">Google Cloud Platform Business Professiona</a>     
-          <li>
-            <i class="fa-li fa fa-certificate"></i>        
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/Google_android_development.pdf">Android Developer (Google)</a>   
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/ML_WITH_PYTHON_CERTIFICATE.pdf">Machine Learning With Python</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/RDBMS_certificate.pdf">SQL And RDBMS </a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/certificate-Be-A-White-Hat-Hacker-and-Pen-Tester.pdf">Ethical Hacker (Pen Tester)</a> 
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/certificate-Django-and-Python-Development.pdf">Web Development (Django)</a>         
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/certificate_C%2B%2B.pdf">C++ Developer</a>        
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/certificate-of-completion-for-ethical-hacker-training.pdf">Bug Bounty Hunter</a>
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/microsoft_internship.pdf">Microsoft Internship</a>
-          <li>
-            <i class="fa-li fa fa-certificate"></i>
-            <a href="https://github.com/rohankumar997/CERTIFICATES_PDF/blob/master/CERTI_BADGES/Certificate-technical-seo-exam.pdf">Search Engine Optimization</a>
-        </ul> 
-    </section>
-    <hr class="m-0">
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="projects">
-      <div class="w-100">
-        <h2 class="mb-5">Projects</h2>
-            <div class="row">
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">ATM Software</h5>
-                    <p class="card-text">Atm software for transactions in file storage system.</p>
-                    <a href="https://github.com/rohankumar997/AtmMachine" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">C++</span>
-                      <span class="badge badge-pill badge-secondary">File Handling</span>
-                      <span class="badge badge-pill badge-secondary">Exe</span>
-                      <span class="badge badge-pill badge-secondary">VS Code</span>
-                      <span class="badge badge-pill badge-secondary">Optimised</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">Xlsx To Csv Converter</h5>
-                    <p class="card-text">Java Code Used To Convert The Raw Xlsx File to Csv File.</p>
-                    <a href="https://github.com/rohankumar997/Xlsx2CsvConverter" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">Java</span>
-                      <span class="badge badge-pill badge-secondary">Xlsx</span>
-                      <span class="badge badge-pill badge-secondary">Csv</span>
-                      <span class="badge badge-pill badge-secondary">Conversion</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">PASSWORD MANAGER</h5>
-                    <p class="card-text">Manage passwords using inbuild sqlite database using single master password.</p>
-                    <a href="https://github.com/rohankumar997/Password_Manager" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">Password</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">Master</span>
-                      <span class="badge badge-pill badge-secondary">SqlLite</span>
-                      <span class="badge badge-pill badge-secondary">Dictonary</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">SNAKE GAME USING AI</h5>
-                    <p class="card-text">A math based snake game, additional to the classical snake game.</p>
-                    <a href="https://github.com/rohankumar997/Snake-Game-AI" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">AI</span>
-                      <span class="badge badge-pill badge-secondary">JavaScript</span>
-                      <span class="badge badge-pill badge-secondary">search algorithm</span>
-                      <span class="badge badge-pill badge-secondary">training</span>
-                      <span class="badge badge-pill badge-secondary">math </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">RETRO PING PONG GAME</h5>
-                    <p class="card-text">Retro Ping Pong game using Turtle module.</p>
-                    <a href="https://github.com/rohankumar997/ping_pong" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">turtle</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">Module</span>
-                      <span class="badge badge-pill badge-secondary">2D</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">Automation</h5>
-                    <p class="card-text">Automate the task fetching script names from Xlsx file.</p>
-                    <a href="https://github.com/rohankumar997/Automation" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">Server</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">validation</span>
-                      <span class="badge badge-pill badge-secondary">Paramiko</span>
-                      <span class="badge badge-pill badge-secondary">Teradata</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">BIT COIN MINING SOFTWARE</h5>
-                    <p class="card-text">bitcoin mining using previos hash value sha256.</p>
-                    <a href="https://github.com/rohankumar997/BitCoinMining" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">BitCoin</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">Hash</span>
-                      <span class="badge badge-pill badge-secondary">sha256</span>
-                      <span class="badge badge-pill badge-secondary">GPU</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">CONVERT HTM TO TXT</h5>
-                    <p class="card-text">Extract the html page and convert into the text format.</p>
-                    <a href="https://github.com/rohankumar997/Convert_HtmToXlsx" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">pandas</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">os</span>
-                      <span class="badge badge-pill badge-secondary">SQLA</span>
-                      <span class="badge badge-pill badge-secondary">path</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">GITHUB AUTOFOLLOW BOT</h5>
-                    <p class="card-text">Github auto follow bot to increase or decrease following.</p>
-                    <a href="https://github.com/rohankumar997/GITHUB_AUTOFOLLOW_BOT" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">selenium</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">getpass</span>
-                      <span class="badge badge-pill badge-secondary">time</span>
-                      <span class="badge badge-pill badge-secondary">sys</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">IMAGE RESIZER</h5>
-                    <p class="card-text">Used to resize the image to our needs using slider.</p>
-                    <a href="https://github.com/rohankumar997/IMAGE_RESIZE" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">tkinter</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">PIL</span>
-                      <span class="badge badge-pill badge-secondary">shutil</span>
-                      <span class="badge badge-pill badge-secondary">ImageTk</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">PDF TO TEXT CONVERTER</h5>
-                    <p class="card-text">Converts the content present in pdf to txt.</p>
-                    <a href="https://github.com/rohankumar997/PDF_TO_TEXT" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">PyPDF2</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">PdfFileReader</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">SNAKE GAME(PYTHON)</h5>
-                    <p class="card-text">Snake game using Tkinter and pygame module.</p>
-                    <a href="https://github.com/rohankumar997/Snake_Game_PYTHON" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">pygame</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">tkinter</span>
-                      <span class="badge badge-pill badge-secondary">messagebox</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">PASSWORD SAVER</h5>
-                    <p class="card-text">Saves the password in hashed format and unhashes it.</p>
-                    <a href="https://github.com/rohankumar997/Password_saver" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">tkinter</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">functools</span>
-                      <span class="badge badge-pill badge-secondary">operator</span>
-                      <span class="badge badge-pill badge-secondary">Pmw</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">FLASK REST API</h5>
-                    <p class="card-text">Creating an rest api using flask.</p>
-                    <a href="https://github.com/rohankumar997/REST_API_PYTHON/blob/master/main.py" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">Flask</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">route</span>
-                      <span class="badge badge-pill badge-secondary">jsonify</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">COMPRESSION ALGORITHM</h5>
-                    <p class="card-text">Effective way to compress the data and uncompress when required.</p>
-                    <a href="https://github.com/rohankumar997/COMPRESSING_ALGORITHM" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">zlib</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">base64</span>
-                      <span class="badge badge-pill badge-secondary">os</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">AMAZON PRODUCT MONITOR</h5>
-                    <p class="card-text">Monitors the specific product and when the price falls below mails to buy the product.</p>
-                    <a href="https://github.com/rohankumar997/amazon_product_monitor" class="btn btn-primary">Go To Project</a>
-                    <p>
-                      <span class="badge badge-pill badge-secondary">requests</span>
-                      <span class="badge badge-pill badge-secondary">Python</span>
-                      <span class="badge badge-pill badge-secondary">smtplib</span>
-                      <span class="badge badge-pill badge-secondary">BeautifulSoup</span>
-                      <span class="badge badge-pill badge-secondary">re</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-    </section>
-    <hr class="m-0">
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="awards">
-      <div class="w-100">
-        <h2 class="mb-5">ACHIEVEMENTS &amp; ACCOLADES</h2>
-        <ul class="fa-ul mb-0">
-          
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Received Award from manager for the automation which reduced manual hours.
-          </li>
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Received appreciation from onsite counterparts for the best deliverables in time.
-          </li>
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Received Spot Award.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Got recognition for creating file validation scripts which checks the issues in files which are being processed.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Developed POC for	Migrating data from Teradata to snowflake using AWS lambda function.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Developed Database objects validation software used to validate the table structures among different environments and send mails to respective teams if there exist any difference.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Auto fetcher software written in python to extract the scripts from the servers and compare for any issues in higher (PROD) and lower (DEV) environment and send mail automatically if any issue exists.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Database workbook validation script to check for errors in the workbook.
-          </li>  
-          <li>
-            <i class="fa-li fa fa-trophy text-warning"></i>
-            Created	Reusable informatica workflow using Visio.
-          </li>            
-        </ul>
-      </div>
-    </section>
-    <div class="container">
-    <p class="small float-right">Built with <i class="fas fa-heart text-danger"></i> by <a href="#" target="_blank">Rohan Kumar</a>, under MIT License.</p>
-    </div>
-  </div>
-  <!-- Bootstrap core JavaScript -->
-  <script src="static/vendor/jquery/jquery.min.js"></script>
-  <script src="static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- Plugin JavaScript -->
-  <script src="static/vendor/jquery-easing/jquery.easing.min.js"></script>
-  <!-- Custom scripts for this template -->
-  <script src="static/js/resume.min.js"></script>
+  <!-- Terminal root -->
+  <div id="app"></div>
+  <div class="hint">try: <b>help</b> • <b>banner</b> • <b>projects</b> <i>python</i> • <b>theme</b> <i>dark</i></div>
+
+  <!-- libs -->
+  <script src="https://unpkg.com/jquery"></script>
+  <script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
+
+  <script>
+    /* =================== DATA (personalize freely) =================== */
+    const NAME = "rohan";
+    const TAGLINE = "Senior Data Engineer • Streaming • Storage • Low-latency";
+    const CONTACT = {
+      email: "mailto:rohankumardubey497@gmail.com",
+      phone: "+91-7093123447",            // public on your site; remove if you don't want it displayed
+      city: "Hyderabad, India"
+    };
+    const LINKS = {
+      site: "https://rohankumardubey.github.io/",
+      github: "https://github.com/rohankumardubey/",
+      linkedin: "https://www.linkedin.com/in/rohan-kumar-dubey-3a9a31156/",
+      twitter: "https://twitter.com/rohanku43485614"
+      // resume: "https://<your-direct-pdf-url>"  // uncomment + set to enable "resume" command
+    };
+
+    /* About / Skills / Experience content (from your portfolio; tweak anytime) */
+    const about = `Hi, I'm Rohan — Senior Data Engineer at PokerStars (RAPID team).
+I build real-time data products across the Stars ecosystem with Java, Python, Flink, Kafka,
+Spark, and AWS. 6+ years across Experian, Model N, Carelon, and Legato.
+Passionate about distributed systems, concurrency, and low-latency design.`;
+
+    const coreSkills = [
+      "Streaming & Data: Flink, Spark, Kafka, Hive, Hadoop, Iceberg/Delta",
+      "Cloud/Infra: AWS (Kinesis, DynamoDB, Athena, EMR, EC2, Lambda), Docker, K8s, Grafana/Prometheus",
+      "DB/Files: Redshift, Teradata, PostgreSQL, Parquet/ORC/Avro",
+      "Langs: Java, Python, Go, Scala, SQL, Shell, C++",
+      "Practices: CI/CD, ETL/ELT, Web scraping/automation, BI reporting"
+    ];
+
+    const experience = [
+      {
+        title: "Senior Data Engineer",
+        company: "PokerStars",
+        dates: "Oct 2023 — Present",
+        url: "https://www.pokerstars.com/",
+        bullets: [
+          "RAPID team — real-time Business Events, Profiles, EventGens, Recommenders.",
+          "Stack: Java, Python, Flink, Spark, AWS (Kinesis, DynamoDB, Athena), Kafka, Hive/Hadoop, Iceberg/Delta, KDA, K8s, Grafana/Prometheus."
+        ]
+      },
+      {
+        title: "Senior Software Developer",
+        company: "Experian PLC",
+        dates: "Apr 2023 — Sep 2023",
+        url: "https://www.experian.com/",
+        bullets: [
+          "AIS (Ascend Intelligence Services) with Spring Boot + Spark on Kubernetes.",
+          "Spark Streaming, AWS, Kafka, Iceberg/Delta, Airbyte, PostgreSQL, Jenkins."
+        ]
+      },
+      {
+        title: "Member of Technical Staff",
+        company: "Model N",
+        dates: "Jul 2021 — Mar 2023",
+        url: "https://www.modeln.com/",
+        bullets: [
+          "Integration Services: REST (Spring Boot), Kafka, Spark, Delta Lake; Dremio for ad-hoc queries.",
+          "Java 11, Scala, Python, NiFi + Registry, S3/EMR/Glue/Athena/Secrets, Redshift/RDS, Temporal, Docker/K8s."
+        ]
+      },
+      {
+        title: "Software Engineer",
+        company: "Carelon Global Solutions",
+        dates: "Jul 2020 — Jun 2021",
+        url: "https://www.carelonglobal.com/",
+        bullets: [
+          "Medicare/Medicaid analytics with Spark/Hadoop data marts."
+        ]
+      },
+      {
+        title: "Associate Software Engineer",
+        company: "Legato Health Technologies",
+        dates: "Sep 2018 — Jun 2020",
+        url: "https://www.legatohealth.com/",
+        bullets: [
+          "End-to-end data processing → Tableau dashboards; ETL using Teradata & Informatica."
+        ]
+      }
+    ];
+
+    const education = [
+      { school: "Mahatma Gandhi Institute of Technology, Hyderabad", degree: "B.Tech (Electrical & Electronics Engineering)", dates: "2014 — 2018" }
+    ];
+
+    const certificates = [
+      ["AWS Developer","https://github.com/rohankumardubey/"],
+      ["CISCO — Internet of Things","https://github.com/rohankumardubey/"],
+      ["Data Science Using Python","https://github.com/rohankumardubey/"],
+      ["Android Developer (Google)","https://github.com/rohankumardubey/"],
+      ["C++ Developer","https://github.com/rohankumardubey/"]
+    ];
+
+    const projects = [
+      ["GoXStream (Go)","Go streaming engine: windows, state, REST.","https://github.com/rohankumardubey"],  // replace with repo
+      ["Privacy Radar (Rust)","PII discovery + lineage.","https://github.com/rohankumardubey"],           // replace with repo
+      ["Password Manager","Master-password manager (SQLite).","https://github.com/rohankumardubey"],
+      ["Snake Game (AI)","Math/search-trained snake.","https://github.com/rohankumardubey"],
+      ["Automation Launcher","Read XLSX → run scripts.","https://github.com/rohankumardubey"]
+    ];
+
+    const achievements = [
+      "Automation award for reducing manual hours.",
+      "Spot awards & on-time delivery appreciations.",
+      "DB objects validation tool with environment diffs.",
+      "POC: Teradata → Snowflake via Lambda."
+    ];
+
+    /* =================== BANNER / ASCII =================== */
+    const banner = `
+[[;#31FF74;]██████╗  ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗]
+[[;#31FF74;]██╔══██╗██╔═████╗██║  ██║██╔══██╗████╗  ██║]
+[[;#31FF74;]██████╔╝██║██╔██║███████║███████║██╔██╗ ██║]   [[;#59ffa3;]${TAGLINE}]
+[[;#31FF74;]██╔══██╗████╔╝██║╚════██║██╔══██║██║╚██╗██║]
+[[;#31FF74;]██║  ██║╚██████╔╝     ██║██║  ██║██║ ╚████║]   Type [[;#C9FFD7;]"help"]] to start
+[[;#31FF74;]╚═╝  ╚═╝ ╚═════╝      ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝]   Theme: [[;#59ffa3;]hacker]
+`;
+
+    /* =================== COMMANDS =================== */
+    const commands = {
+      help() {
+        this.echo(`Available commands:
+  [[;#C9FFD7;]banner]         Show the ASCII banner
+  [[;#C9FFD7;]about]          About me
+  [[;#C9FFD7;]skills]         Core skills
+  [[;#C9FFD7;]exp]            Experience
+  [[;#C9FFD7;]education]      Education
+  [[;#C9FFD7;]projects]       Selected projects (try: projects python)
+  [[;#C9FFD7;]certs]          Certificates
+  [[;#C9FFD7;]achievements]   Achievements & accolades
+  [[;#C9FFD7;]links]          Social links
+  [[;#C9FFD7;]contact]        Email/phone/location
+  [[;#C9FFD7;]resume]         Open resume (set LINKS.resume)
+  [[;#C9FFD7;]theme]          Switch theme: hacker | dark | light
+  [[;#C9FFD7;]clear]          Clear the screen`);
+      },
+
+      ls() { this.exec("help"); },
+      banner() { this.echo(banner); },
+      about() { this.echo(about); },
+      skills() { this.echo(coreSkills.map(s => "• " + s).join("\n")); },
+
+      exp() {
+        experience.forEach(role => {
+          this.echo(`\n[[;#59ffa3;]${role.title}] — ${role.company}  [[;#6aff9a;]${role.dates}]
+${role.url ? role.url : ""}
+${role.bullets.map(b => "  - " + b).join("\n")}`);
+        });
+      },
+
+      education() {
+        education.forEach(e =>
+          this.echo(`• ${e.school}\n  ${e.degree}  [[;#6aff9a;]${e.dates}]\n`));
+      },
+
+      projects(arg) {
+        if (!arg) this.echo("Tip: projects <filter>, e.g., 'projects python' or 'projects game'\\n");
+        const q = (arg||"").toLowerCase();
+        projects
+          .filter(([n,d]) => !q || n.toLowerCase().includes(q) || d.toLowerCase().includes(q))
+          .forEach(([name, desc, url]) => this.echo(`• ${name} — ${desc}\n  ${url}`));
+      },
+
+      certs() {
+        this.echo("Certificates (selection):");
+        certificates.forEach(([name,url]) => this.echo(`• ${name}\n  ${url}`));
+      },
+
+      achievements() { achievements.forEach(a => this.echo("• " + a)); },
+
+      links() {
+        this.echo(`Portfolio : ${LINKS.site}
+GitHub   : ${LINKS.github}
+LinkedIn : ${LINKS.linkedin}
+Twitter  : ${LINKS.twitter}`);
+      },
+
+      contact() {
+        this.echo(`${CONTACT.city}
+Email : ${CONTACT.email.replace("mailto:","")}
+Phone : ${CONTACT.phone}`);
+      },
+
+      resume() {
+        if (LINKS.resume) { window.open(LINKS.resume, "_blank"); this.echo("Opening resume…"); }
+        else this.echo('Set LINKS.resume to enable this command.');
+      },
+
+      theme(name = "hacker") {
+        const body = document.body;
+        body.classList.remove("theme-dark","theme-light");
+        if (name.toLowerCase() === "dark") body.classList.add("theme-dark");
+        else if (name.toLowerCase() === "light") body.classList.add("theme-light");
+        else body.classList.remove("theme-dark","theme-light"); // hacker
+        this.echo(`Theme set to ${name}.`);
+      }
+    };
+
+    /* =================== BOOT TERMINAL =================== */
+    jQuery(function($) {
+      $("#app").terminal(commands, {
+        greetings: banner,
+        name: "portfolio",
+        prompt: cb => cb(`[[;#31FF74;]visitor@${NAME}.dev]$ `),
+        completion: true,
+        checkArity: false
+      });
+    });
+
+    /* =================== MATRIX RAIN =================== */
+    (function matrix() {
+      const canvas = document.getElementById("matrix");
+      const ctx = canvas.getContext("2d");
+      let w, h, columns, drops;
+
+      const glyphs = "アイウエオカキクケコｱｲｳｴｵｶｷｸｹｺ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const glyphArr = glyphs.split("");
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        const fontSize = 18;                // matrix glyph size
+        columns = Math.floor(w / fontSize); // number of columns
+        drops = new Array(columns).fill(0).map(() => Math.random() * -100); // start above screen
+        ctx.font = fontSize + "px VT323, monospace";
+      }
+      window.addEventListener("resize", resize, { passive: true });
+      resize();
+
+      function draw() {
+        // translucent clear to create trailing effect
+        ctx.fillStyle = "rgba(5,11,6,0.08)";
+        ctx.fillRect(0, 0, w, h);
+
+        // draw glyphs
+        ctx.fillStyle = "#31FF74";
+        for (let i = 0; i < drops.length; i++) {
+          const text = glyphArr[Math.floor(Math.random() * glyphArr.length)];
+          const x = i * 18;
+          const y = drops[i] * 18;
+          ctx.fillText(text, x, y);
+
+          // reset drop randomly after it passes bottom
+          if (y > h && Math.random() > 0.975) drops[i] = 0;
+          drops[i] += (Math.random() * 0.8) + 0.6; // variable speed
+        }
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+    })();
+  </script>
 </body>
 </html>
