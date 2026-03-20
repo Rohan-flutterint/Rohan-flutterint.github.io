@@ -1,385 +1,476 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Rohan Kumar Dubey — Hacker Terminal Portfolio</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="Senior Data Engineer — real-time data, streaming, storage, low-latency systems." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <!-- VT323 = retro CRT-ish monospace; fallback to Fira Code if you prefer -->
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
-
-  <!-- jQuery Terminal styles -->
-  <link rel="stylesheet" href="https://unpkg.com/jquery.terminal/css/jquery.terminal.min.css" />
-
-  <style>
-    /* =================== THEME TOKENS =================== */
-    :root {
-      /* hacker (default) */
-      --bg: #050B06;              /* deep black-green */
-      --fg: #C9FFD7;              /* pale mint text */
-      --accent: #31FF74;          /* neon green */
-      --dim: #6aff9a;             /* dimmer green */
-      --link: #59ffa3;            /* link green */
-      --shadow: 0 0 8px rgba(49,255,116,.55), 0 0 24px rgba(49,255,116,.25);
-    }
-    .theme-dark {
-      --bg: #0b0f14;
-      --fg: #e6edf3;
-      --accent: #3fb950;
-      --dim: #8b949e;
-      --link: #58a6ff;
-      --shadow: 0 0 8px rgba(63,185,80,.35);
-    }
-    .theme-light {
-      --bg: #f6f8fa;
-      --fg: #0b0f14;
-      --accent: #1f6feb;
-      --dim: #57606a;
-      --link: #0969da;
-      --shadow: none;
-    }
-
-    /* =================== LAYOUT =================== */
-    html, body { height: 100%; }
-    body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font-family: "VT323", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      overflow: hidden; /* keep matrix canvas fixed */
-    }
-    #matrix {
-      position: fixed; inset: 0;
-      z-index: 0; /* behind terminal */
-      display: block;
-    }
-    #app {
-      position: relative; z-index: 2;
-      height: 100%;
-      filter: drop-shadow(0 0 0.25rem rgba(49,255,116,0.3));
-    }
-
-    /* CRT fx: vignette + scanlines + subtle flicker */
-    .crt::before, .crt::after {
-      content: ""; pointer-events: none; position: fixed; inset: 0; z-index: 1;
-    }
-    .crt::before {
-      background:
-        radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.85) 100%);
-      mix-blend-mode: overlay;
-    }
-    .crt::after {
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          rgba(0,0,0,0.12) 0px,
-          rgba(0,0,0,0.12) 2px,
-          rgba(0,0,0,0.08) 3px,
-          rgba(0,0,0,0.08) 4px
-        );
-      animation: scan 9s linear infinite, flicker 2.2s infinite steps(60);
-      opacity: .35;
-    }
-    @keyframes scan {
-      0% { transform: translateY(-100%); }
-      100% { transform: translateY(100%); }
-    }
-    @keyframes flicker {
-      0%, 19%, 21%, 23%, 80%, 100% { opacity: .35; }
-      20%, 22% { opacity: .25; }
-      24% { opacity: .38; }
-    }
-
-    /* jQuery Terminal overrides */
-    .terminal, .cmd {
-      font-size: 20px; line-height: 1.35;
-      text-shadow: var(--shadow);
-      color: var(--fg);
-    }
-    .terminal {
-      background: transparent !important;
-    }
-    .terminal .prompt { color: var(--accent); }
-    .terminal .cursor {
-      background: var(--accent) !important;
-      box-shadow: 0 0 8px var(--accent), 0 0 18px rgba(49,255,116,.6);
-    }
-    .terminal a { color: var(--link); text-decoration: none; border-bottom: 1px dotted currentColor; }
-    .terminal a:hover { text-decoration: underline; }
-    ::selection { background: rgba(49,255,116,.35); color: #08150d; }
-
-    /* Subtle welcome toast */
-    .hint {
-      position: absolute; inset: auto 1rem 1rem auto; z-index: 3;
-      color: var(--dim); opacity: .9; font-size: 16px; user-select: none;
-      text-shadow: var(--shadow);
-      background: rgba(0,0,0,.25); border: 1px solid rgba(49,255,116,.25);
-      padding: .35rem .55rem; border-radius: .5rem; backdrop-filter: blur(3px);
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rohan Kumar Dubey | Senior Data Engineer</title>
+  <meta
+    name="description"
+    content="Professional portfolio for Rohan Kumar Dubey, Senior Data Engineer building real-time, low-latency, and cost-efficient data platforms on AWS."
+  >
+  <meta name="theme-color" content="#0d1117">
+  <meta property="og:title" content="Rohan Kumar Dubey | Senior Data Engineer">
+  <meta
+    property="og:description"
+    content="Senior Data Engineer focused on real-time streaming systems, AWS data platforms, cost optimization, and production reliability."
+  >
+  <meta property="og:type" content="website">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="./styles.css">
 </head>
-<body class="crt">
-  <!-- Matrix rain background -->
-  <canvas id="matrix" aria-hidden="true"></canvas>
+<body>
+  <div class="background-orb background-orb-left" aria-hidden="true"></div>
+  <div class="background-orb background-orb-right" aria-hidden="true"></div>
 
-  <!-- Terminal root -->
-  <div id="app"></div>
-  <div class="hint">try: <b>help</b> • <b>banner</b> • <b>projects</b> <i>python</i> • <b>theme</b> <i>dark</i></div>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Go to top">
+        <span class="brand-mark">RKD</span>
+        <span class="brand-text">Rohan Kumar Dubey</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#expertise">Expertise</a>
+        <a href="#projects">Projects</a>
+      </nav>
+      <a class="header-cta" href="mailto:rohankumardubey497@gmail.com">Contact</a>
+    </header>
 
-  <!-- libs -->
-  <script src="https://unpkg.com/jquery"></script>
-  <script src="https://unpkg.com/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <main id="top">
+      <section class="hero">
+        <div class="hero-intro panel-surface" data-reveal>
+          <p class="eyebrow">Senior Data Engineer | Real-Time Streaming Systems</p>
+          <h1>Building data platforms that stay fast, reliable, and cost-efficient at production scale.</h1>
+          <p class="hero-text">
+            Senior Data Engineer focused on real-time, low-latency distributed systems and
+            cost-efficient AWS data platforms. I have 7+ years of experience building production
+            pipelines with Flink, Kafka/MSK, Kinesis Data Analytics, Spark, and DynamoDB/S3,
+            with a track record in performance tuning, cost savings, and reliability for
+            business-critical pipelines.
+          </p>
 
-  <script>
-    /* =================== DATA (personalize freely) =================== */
-    const NAME = "rohan";
-    const TAGLINE = "Senior Data Engineer • Streaming • Storage • Low-latency";
-    const CONTACT = {
-      email: "mailto:rohankumardubey497@gmail.com",
-      phone: "+91-7093123447",            // public on your site; remove if you don't want it displayed
-      city: "Hyderabad, India"
-    };
-    const LINKS = {
-      site: "https://rohankumardubey.github.io/",
-      github: "https://github.com/rohankumardubey/",
-      linkedin: "https://www.linkedin.com/in/rohan-kumar-dubey-3a9a31156/",
-      twitter: "https://twitter.com/rohanku43485614"
-      // resume: "https://<your-direct-pdf-url>"  // uncomment + set to enable "resume" command
-    };
+          <div class="hero-actions">
+            <a class="button button-primary" href="mailto:rohankumardubey497@gmail.com">Start a conversation</a>
+            <a class="button button-secondary" href="https://www.linkedin.com/in/rohan-kumar-dubey-3a9a31156" target="_blank" rel="noreferrer">View LinkedIn</a>
+          </div>
 
-    /* About / Skills / Experience content (from your portfolio; tweak anytime) */
-    const about = `Hi, I'm Rohan — Senior Data Engineer at PokerStars (RAPID team).
-I build real-time data products across the Stars ecosystem with Java, Python, Flink, Kafka,
-Spark, and AWS. 6+ years across Experian, Model N, Carelon, and Legato.
-Passionate about distributed systems, concurrency, and low-latency design.`;
+          <div class="hero-proof">
+            <div>
+              <span class="proof-label">Current role</span>
+              <strong>Senior Data Engineer, Streaming AI</strong>
+            </div>
+            <div>
+              <span class="proof-label">Primary focus</span>
+              <strong>Real-time streaming, AWS data platforms, and low-latency processing</strong>
+            </div>
+            <div>
+              <span class="proof-label">Signature impact</span>
+              <strong>Cost optimization, exactly-once reliability, and production observability</strong>
+            </div>
+          </div>
+        </div>
 
-    const coreSkills = [
-      "Streaming & Data: Flink, Spark, Kafka, Hive, Hadoop, Iceberg/Delta",
-      "Cloud/Infra: AWS (Kinesis, DynamoDB, Athena, EMR, EC2, Lambda), Docker, K8s, Grafana/Prometheus",
-      "DB/Files: Redshift, Teradata, PostgreSQL, Parquet/ORC/Avro",
-      "Langs: Java, Python, Go, Scala, SQL, Shell, C++",
-      "Practices: CI/CD, ETL/ELT, Web scraping/automation, BI reporting"
-    ];
+        <aside class="hero-aside" data-reveal>
+          <section class="signal-panel signal-panel-dark">
+            <div class="signal-panel-head">
+              <p class="status-pill">Current role</p>
+              <p class="location">PokerStars (Flutter Entertainment) | Senior Data Engineer, Streaming AI</p>
+            </div>
 
-    const experience = [
-      {
-        title: "Senior Data Engineer",
-        company: "PokerStars",
-        dates: "Oct 2023 — Present",
-        url: "https://www.pokerstars.com/",
-        bullets: [
-          "RAPID team — real-time Business Events, Profiles, EventGens, Recommenders.",
-          "Stack: Java, Python, Flink, Spark, AWS (Kinesis, DynamoDB, Athena), Kafka, Hive/Hadoop, Iceberg/Delta, KDA, K8s, Grafana/Prometheus."
-        ]
-      },
-      {
-        title: "Senior Software Developer",
-        company: "Experian PLC",
-        dates: "Apr 2023 — Sep 2023",
-        url: "https://www.experian.com/",
-        bullets: [
-          "AIS (Ascend Intelligence Services) with Spring Boot + Spark on Kubernetes.",
-          "Spark Streaming, AWS, Kafka, Iceberg/Delta, Airbyte, PostgreSQL, Jenkins."
-        ]
-      },
-      {
-        title: "Member of Technical Staff",
-        company: "Model N",
-        dates: "Jul 2021 — Mar 2023",
-        url: "https://www.modeln.com/",
-        bullets: [
-          "Integration Services: REST (Spring Boot), Kafka, Spark, Delta Lake; Dremio for ad-hoc queries.",
-          "Java 11, Scala, Python, NiFi + Registry, S3/EMR/Glue/Athena/Secrets, Redshift/RDS, Temporal, Docker/K8s."
-        ]
-      },
-      {
-        title: "Software Engineer",
-        company: "Carelon Global Solutions",
-        dates: "Jul 2020 — Jun 2021",
-        url: "https://www.carelonglobal.com/",
-        bullets: [
-          "Medicare/Medicaid analytics with Spark/Hadoop data marts."
-        ]
-      },
-      {
-        title: "Associate Software Engineer",
-        company: "Legato Health Technologies",
-        dates: "Sep 2018 — Jun 2020",
-        url: "https://www.legatohealth.com/",
-        bullets: [
-          "End-to-end data processing → Tableau dashboards; ETL using Teradata & Informatica."
-        ]
-      }
-    ];
+            <div class="metric-grid">
+              <article>
+                <strong>7+</strong>
+                <span>Years building production-grade data pipelines</span>
+              </article>
+              <article>
+                <strong>Streaming</strong>
+                <span>Flink, Kafka/MSK, Spark, Kinesis Data Analytics, Airflow</span>
+              </article>
+              <article>
+                <strong>AWS</strong>
+                <span>DynamoDB, S3, Glue, EMR, Athena, MSK, KDA, Redshift</span>
+              </article>
+              <article>
+                <strong>Impact</strong>
+                <span>Cost savings, performance tuning, and reliability for critical pipelines</span>
+              </article>
+            </div>
+          </section>
 
-    const education = [
-      { school: "Mahatma Gandhi Institute of Technology, Hyderabad", degree: "B.Tech (Electrical & Electronics Engineering)", dates: "2014 — 2018" }
-    ];
+          <section class="signal-panel signal-panel-light">
+            <p class="section-label">Signature strengths</p>
+            <ul class="principle-list">
+              <li>Streaming design with exactly-once semantics, checkpointing, and backpressure awareness</li>
+              <li>Schema evolution, serialization strategy, and production observability for long-lived pipelines</li>
+              <li>Performance and cost optimization across AWS storage, compute, and stateful stream processing</li>
+            </ul>
+          </section>
+        </aside>
+      </section>
 
-    const certificates = [
-      ["AWS Developer","https://github.com/rohankumardubey/"],
-      ["CISCO — Internet of Things","https://github.com/rohankumardubey/"],
-      ["Data Science Using Python","https://github.com/rohankumardubey/"],
-      ["Android Developer (Google)","https://github.com/rohankumardubey/"],
-      ["C++ Developer","https://github.com/rohankumardubey/"]
-    ];
+      <section class="signature-rail panel-surface" aria-label="Key technologies" data-reveal>
+        <div class="rail-label">
+          <span class="section-label">Core Stack</span>
+          <p>Technologies repeatedly used across streaming, analytics, and platform delivery.</p>
+        </div>
+        <div class="chip-cloud">
+          <span>Java</span>
+          <span>Python</span>
+          <span>Go</span>
+          <span>Scala</span>
+          <span>C++</span>
+          <span>SQL</span>
+          <span>Apache Flink</span>
+          <span>Apache Spark</span>
+          <span>Kafka / MSK</span>
+          <span>Kinesis Data Analytics</span>
+          <span>Delta Lake</span>
+          <span>Parquet / ORC</span>
+          <span>DynamoDB</span>
+          <span>PostgreSQL</span>
+          <span>Snowflake</span>
+          <span>Dremio</span>
+          <span>AWS</span>
+          <span>Kubernetes</span>
+          <span>Docker</span>
+        </div>
+      </section>
 
-    const projects = [
-      ["GoXStream (Go)","Go streaming engine: windows, state, REST.","https://github.com/rohankumardubey"],  // replace with repo
-      ["Privacy Radar (Rust)","PII discovery + lineage.","https://github.com/rohankumardubey"],           // replace with repo
-      ["Password Manager","Master-password manager (SQLite).","https://github.com/rohankumardubey"],
-      ["Snake Game (AI)","Math/search-trained snake.","https://github.com/rohankumardubey"],
-      ["Automation Launcher","Read XLSX → run scripts.","https://github.com/rohankumardubey"]
-    ];
+      <section id="about" class="content-section">
+        <div class="section-heading" data-reveal>
+          <p class="section-label">About</p>
+          <h2>Senior data engineering grounded in production behavior, throughput, and cost discipline.</h2>
+        </div>
 
-    const achievements = [
-      "Automation award for reducing manual hours.",
-      "Spot awards & on-time delivery appreciations.",
-      "DB objects validation tool with environment diffs.",
-      "POC: Teradata → Snowflake via Lambda."
-    ];
+        <div class="about-layout">
+          <article class="feature-card panel-surface" data-reveal>
+            <p class="feature-kicker">Profile</p>
+            <p class="feature-copy">
+              My work is centered on real-time data engineering: streaming pipelines, low-latency
+              distributed systems, and AWS-native data platforms that need to be dependable under
+              sustained production load.
+            </p>
+          </article>
 
-    /* =================== BANNER / ASCII =================== */
-    const banner = `
-[[;#31FF74;]██████╗  ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗]
-[[;#31FF74;]██╔══██╗██╔═████╗██║  ██║██╔══██╗████╗  ██║]
-[[;#31FF74;]██████╔╝██║██╔██║███████║███████║██╔██╗ ██║]   [[;#59ffa3;]${TAGLINE}]
-[[;#31FF74;]██╔══██╗████╔╝██║╚════██║██╔══██║██║╚██╗██║]
-[[;#31FF74;]██║  ██║╚██████╔╝     ██║██║  ██║██║ ╚████║]   Type [[;#C9FFD7;]"help"]] to start
-[[;#31FF74;]╚═╝  ╚═╝ ╚═════╝      ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝]   Theme: [[;#59ffa3;]hacker]
-`;
+          <article class="feature-card panel-surface" data-reveal>
+            <p class="feature-kicker">Working Style</p>
+            <p class="feature-copy">
+              I focus on practical architecture decisions, reproducible delivery, clear operational
+              visibility, and designs that balance performance, maintainability, and cost.
+            </p>
+          </article>
 
-    /* =================== COMMANDS =================== */
-    const commands = {
-      help() {
-        this.echo(`Available commands:
-  [[;#C9FFD7;]banner]         Show the ASCII banner
-  [[;#C9FFD7;]about]          About me
-  [[;#C9FFD7;]skills]         Core skills
-  [[;#C9FFD7;]exp]            Experience
-  [[;#C9FFD7;]education]      Education
-  [[;#C9FFD7;]projects]       Selected projects (try: projects python)
-  [[;#C9FFD7;]certs]          Certificates
-  [[;#C9FFD7;]achievements]   Achievements & accolades
-  [[;#C9FFD7;]links]          Social links
-  [[;#C9FFD7;]contact]        Email/phone/location
-  [[;#C9FFD7;]resume]         Open resume (set LINKS.resume)
-  [[;#C9FFD7;]theme]          Switch theme: hacker | dark | light
-  [[;#C9FFD7;]clear]          Clear the screen`);
-      },
+          <article class="feature-quote" data-reveal>
+            <p>
+              Proven impact on cost savings, performance tuning, and reliability for business-critical data pipelines.
+            </p>
+          </article>
+        </div>
+      </section>
 
-      ls() { this.exec("help"); },
-      banner() { this.echo(banner); },
-      about() { this.echo(about); },
-      skills() { this.echo(coreSkills.map(s => "• " + s).join("\n")); },
+      <section id="experience" class="content-section experience-section">
+        <div class="section-heading section-heading-wide" data-reveal>
+          <div>
+            <p class="section-label">Experience</p>
+            <h2>Experience building real-time and analytics platforms across product and enterprise domains.</h2>
+          </div>
+          <p class="section-intro">
+            The through-line across these roles is consistent: design reliable data pipelines,
+            improve runtime and cost behavior, and ship systems that downstream teams can operate
+            with confidence.
+          </p>
+        </div>
 
-      exp() {
-        experience.forEach(role => {
-          this.echo(`\n[[;#59ffa3;]${role.title}] — ${role.company}  [[;#6aff9a;]${role.dates}]
-${role.url ? role.url : ""}
-${role.bullets.map(b => "  - " + b).join("\n")}`);
-        });
-      },
+        <div class="timeline">
+          <article class="timeline-item" data-reveal>
+            <div class="timeline-meta">
+              <p class="timeline-period">Aug 2023 - Present</p>
+              <h3>Senior Data Engineer, Streaming AI</h3>
+              <p class="timeline-company">PokerStars (Flutter Entertainment)</p>
+            </div>
+            <div class="timeline-body">
+              <p>
+                Designed real-time processing on AWS using Flink on Kinesis Data Analytics, MSK,
+                DynamoDB, and S3; reduced hot-path IO and delivered major annual cost savings
+                through DynamoDB modeling, payload compaction, and S3 layout tuning.
+              </p>
+              <p>
+                Built exactly-once sinks with checkpoint alignment and idempotent upserts, and
+                tuned RocksDB state plus JVM behavior for reliable recovery and lower tail latency.
+              </p>
+              <div class="stack-tags">
+                <span>Java</span>
+                <span>Python</span>
+                <span>Go</span>
+                <span>Flink</span>
+                <span>Kafka / MSK</span>
+                <span>Kinesis Data Analytics</span>
+                <span>DynamoDB</span>
+                <span>S3</span>
+                <span>AWS</span>
+                <span>Low Latency</span>
+                <span>Exactly Once</span>
+              </div>
+            </div>
+          </article>
 
-      education() {
-        education.forEach(e =>
-          this.echo(`• ${e.school}\n  ${e.degree}  [[;#6aff9a;]${e.dates}]\n`));
-      },
+          <article class="timeline-item" data-reveal>
+            <div class="timeline-meta">
+              <p class="timeline-period">Mar 2023 - Aug 2023</p>
+              <h3>Senior Data Engineer</h3>
+              <p class="timeline-company">Experian PLC</p>
+            </div>
+            <div class="timeline-body">
+              <p>
+                Delivered regulated pipelines with secure ingestion, data quality gates, and
+                lineage, improving analytics readiness and operational confidence for clients.
+              </p>
+              <p>
+                Standardized both batch and streaming jobs with reproducible configurations,
+                deployment discipline, and monitoring.
+              </p>
+              <div class="stack-tags">
+                <span>Java</span>
+                <span>Scala</span>
+                <span>Python</span>
+                <span>Spark</span>
+                <span>Flink</span>
+                <span>Kafka</span>
+                <span>Data Quality</span>
+                <span>Lineage</span>
+                <span>PostgreSQL</span>
+                <span>Kubernetes</span>
+                <span>Prometheus</span>
+                <span>Grafana</span>
+              </div>
+            </div>
+          </article>
 
-      projects(arg) {
-        if (!arg) this.echo("Tip: projects <filter>, e.g., 'projects python' or 'projects game'\\n");
-        const q = (arg||"").toLowerCase();
-        projects
-          .filter(([n,d]) => !q || n.toLowerCase().includes(q) || d.toLowerCase().includes(q))
-          .forEach(([name, desc, url]) => this.echo(`• ${name} — ${desc}\n  ${url}`));
-      },
+          <article class="timeline-item" data-reveal>
+            <div class="timeline-meta">
+              <p class="timeline-period">Jun 2021 - Mar 2023</p>
+              <h3>Member of Technical Staff 3</h3>
+              <p class="timeline-company">Model N</p>
+            </div>
+            <div class="timeline-body">
+              <p>
+                Built event-driven analytics with Kafka, Spark, and Delta Lake, and exposed
+                downstream access through Dremio and REST services.
+              </p>
+              <p>
+                Improved query performance with partitioning, Z-ordering, predicate pushdown, and
+                compaction to reduce compute and storage costs.
+              </p>
+              <div class="stack-tags">
+                <span>Spark</span>
+                <span>Kafka</span>
+                <span>Delta Lake</span>
+                <span>Dremio</span>
+                <span>REST APIs</span>
+                <span>Partitioning</span>
+                <span>Predicate Pushdown</span>
+                <span>Cost Optimization</span>
+              </div>
+            </div>
+          </article>
 
-      certs() {
-        this.echo("Certificates (selection):");
-        certificates.forEach(([name,url]) => this.echo(`• ${name}\n  ${url}`));
-      },
+          <article class="timeline-item" data-reveal>
+            <div class="timeline-meta">
+              <p class="timeline-period">Aug 2020 - Jun 2021</p>
+              <h3>Software Engineer</h3>
+              <p class="timeline-company">Carelon Global Solutions</p>
+            </div>
+            <div class="timeline-body">
+              <p>
+                Integrated Medicare and Medicaid datasets with SQL analytics to improve revenue
+                capture and reduce operational overhead.
+              </p>
+              <div class="stack-tags">
+                <span>SQL</span>
+                <span>Spark</span>
+                <span>Healthcare Data</span>
+                <span>AWS</span>
+                <span>Analytics</span>
+              </div>
+            </div>
+          </article>
 
-      achievements() { achievements.forEach(a => this.echo("• " + a)); },
+          <article class="timeline-item" data-reveal>
+            <div class="timeline-meta">
+              <p class="timeline-period">Jul 2018 - Aug 2020</p>
+              <h3>Associate Software Engineer</h3>
+              <p class="timeline-company">Legato Health Technologies</p>
+            </div>
+            <div class="timeline-body">
+              <p>
+                Delivered optimized ETL on Teradata and Informatica, and standardized SLAs,
+                validations, and delivery quality for healthcare data workflows.
+              </p>
+              <div class="stack-tags">
+                <span>Teradata</span>
+                <span>Informatica</span>
+                <span>ETL</span>
+                <span>SLAs</span>
+                <span>Validation</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
 
-      links() {
-        this.echo(`Portfolio : ${LINKS.site}
-GitHub   : ${LINKS.github}
-LinkedIn : ${LINKS.linkedin}
-Twitter  : ${LINKS.twitter}`);
-      },
+      <section id="expertise" class="content-section">
+        <div class="section-heading section-heading-wide" data-reveal>
+          <div>
+            <p class="section-label">Core Strengths</p>
+            <h2>Built around streaming systems, AWS data platforms, and operational reliability.</h2>
+          </div>
+        </div>
 
-      contact() {
-        this.echo(`${CONTACT.city}
-Email : ${CONTACT.email.replace("mailto:","")}
-Phone : ${CONTACT.phone}`);
-      },
+        <div class="expertise-grid">
+          <article class="expertise-card panel-surface" data-reveal>
+            <p class="feature-kicker">01</p>
+            <h3>Languages</h3>
+            <p>Java, Python, Go, Scala, C++, SQL, and shell used with a practical bias toward runtime behavior and maintainability.</p>
+          </article>
+          <article class="expertise-card panel-surface" data-reveal>
+            <p class="feature-kicker">02</p>
+            <h3>Streaming and Batch</h3>
+            <p>Apache Flink, Kafka/MSK, Spark, Kinesis Data Analytics, and Airflow across both event-driven and analytical workloads.</p>
+          </article>
+          <article class="expertise-card panel-surface" data-reveal>
+            <p class="feature-kicker">03</p>
+            <h3>Storage and Infrastructure</h3>
+            <p>AWS-centric delivery with DynamoDB, S3, EMR, Glue, Athena, Redshift, Kubernetes, and Docker for production systems.</p>
+          </article>
+          <article class="expertise-card panel-surface" data-reveal>
+            <p class="feature-kicker">04</p>
+            <h3>Specialties</h3>
+            <p>Exactly-once processing, checkpointing, schema evolution, serialization, observability, and performance-plus-cost optimization.</p>
+          </article>
+        </div>
 
-      resume() {
-        if (LINKS.resume) { window.open(LINKS.resume, "_blank"); this.echo("Opening resume…"); }
-        else this.echo('Set LINKS.resume to enable this command.');
-      },
+        <div class="tooling-board" data-reveal>
+          <article class="tooling-card">
+            <p class="section-label">Languages</p>
+            <div class="chip-cloud chip-cloud-compact">
+              <span>Java</span>
+              <span>Python</span>
+              <span>Go</span>
+              <span>Scala</span>
+              <span>C++</span>
+              <span>SQL</span>
+              <span>Shell</span>
+            </div>
+          </article>
+          <article class="tooling-card">
+            <p class="section-label">Streaming and Batch</p>
+            <div class="chip-cloud chip-cloud-compact">
+              <span>Flink</span>
+              <span>Kafka / MSK</span>
+              <span>Spark</span>
+              <span>Kinesis Data Analytics</span>
+              <span>Airflow</span>
+              <span>Delta</span>
+              <span>Parquet / ORC</span>
+            </div>
+          </article>
+          <article class="tooling-card">
+            <p class="section-label">Cloud and Data Platform</p>
+            <div class="chip-cloud chip-cloud-compact">
+              <span>AWS</span>
+              <span>DynamoDB</span>
+              <span>PostgreSQL</span>
+              <span>MySQL</span>
+              <span>Dremio</span>
+              <span>Snowflake</span>
+              <span>Kubernetes</span>
+            </div>
+          </article>
+        </div>
+      </section>
 
-      theme(name = "hacker") {
-        const body = document.body;
-        body.classList.remove("theme-dark","theme-light");
-        if (name.toLowerCase() === "dark") body.classList.add("theme-dark");
-        else if (name.toLowerCase() === "light") body.classList.add("theme-light");
-        else body.classList.remove("theme-dark","theme-light"); // hacker
-        this.echo(`Theme set to ${name}.`);
-      }
-    };
+      <section id="projects" class="content-section credentials-section">
+        <div class="section-heading" data-reveal>
+          <p class="section-label">Selected Work</p>
+          <h2>Projects, education, and contact details presented with the right level of signal.</h2>
+        </div>
 
-    /* =================== BOOT TERMINAL =================== */
-    jQuery(function($) {
-      $("#app").terminal(commands, {
-        greetings: banner,
-        name: "portfolio",
-        prompt: cb => cb(`[[;#31FF74;]visitor@${NAME}.dev]$ `),
-        completion: true,
-        checkArity: false
-      });
-    });
+        <div class="projects-layout">
+          <article class="project-showcase panel-surface" data-reveal>
+            <p class="feature-kicker">Selected Projects</p>
+            <div class="project-entry">
+              <div>
+                <h3>GoXStream</h3>
+                <p>Flink-inspired stream processor in Go with operator graph, checkpoints, and Kafka, file, and database connectors.</p>
+              </div>
+              <a class="text-link" href="https://github.com/rohankumardubey/goxstream" target="_blank" rel="noreferrer">View repository</a>
+            </div>
+            <div class="project-entry">
+              <div>
+                <h3>StreamNest</h3>
+                <p>Minimal Kafka-like broker in Go with log segmentation, producer and consumer CLI, and replication primitives.</p>
+              </div>
+              <a class="text-link" href="https://github.com/rohankumardubey/StreamNest" target="_blank" rel="noreferrer">View repository</a>
+            </div>
+          </article>
 
-    /* =================== MATRIX RAIN =================== */
-    (function matrix() {
-      const canvas = document.getElementById("matrix");
-      const ctx = canvas.getContext("2d");
-      let w, h, columns, drops;
+          <article class="credential-spotlight panel-surface" data-reveal>
+            <p class="feature-kicker">Education</p>
+            <h3>Mahatma Gandhi Institute of Technology, Hyderabad</h3>
+            <p>B.Tech in Electrical Engineering</p>
+            <p class="muted-line">GPA 4.0/4.0 | 2014 - 2018</p>
+          </article>
 
-      const glyphs = "アイウエオカキクケコｱｲｳｴｵｶｷｸｹｺ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const glyphArr = glyphs.split("");
+          <article class="profile-note panel-surface" data-reveal>
+            <p class="feature-kicker">Professional Profile</p>
+            <p>
+              Senior Data Engineer with hands-on depth in streaming systems, AWS-native pipelines,
+              data platform performance, and production-grade observability.
+            </p>
+            <div class="stack-tags">
+              <span>Real Time</span>
+              <span>Low Latency</span>
+              <span>AWS</span>
+              <span>Cost Optimization</span>
+            </div>
+          </article>
 
-      function resize() {
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
-        const fontSize = 18;                // matrix glyph size
-        columns = Math.floor(w / fontSize); // number of columns
-        drops = new Array(columns).fill(0).map(() => Math.random() * -100); // start above screen
-        ctx.font = fontSize + "px VT323, monospace";
-      }
-      window.addEventListener("resize", resize, { passive: true });
-      resize();
+          <article class="contact-card" data-reveal>
+            <p class="feature-kicker">Contact</p>
+            <ul class="contact-list">
+              <li><span>Email</span><a href="mailto:rohankumardubey497@gmail.com">rohankumardubey497@gmail.com</a></li>
+              <li><span>Phone</span><a href="tel:+917093123447">+91 70931 23447</a></li>
+              <li><span>GitHub</span><a href="https://github.com/rohankumardubey" target="_blank" rel="noreferrer">github.com/rohankumardubey</a></li>
+              <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/rohan-kumar-dubey-3a9a31156" target="_blank" rel="noreferrer">rohan-kumar-dubey-3a9a31156</a></li>
+              <li><span>Portfolio</span><a href="https://rohankumardubey.github.io/" target="_blank" rel="noreferrer">rohankumardubey.github.io</a></li>
+            </ul>
+          </article>
+        </div>
+      </section>
 
-      function draw() {
-        // translucent clear to create trailing effect
-        ctx.fillStyle = "rgba(5,11,6,0.08)";
-        ctx.fillRect(0, 0, w, h);
+      <section class="closing-banner" data-reveal>
+        <div>
+          <p class="section-label">Available for senior engineering conversations</p>
+          <h2>Open to senior data engineering roles focused on streaming systems, platform reliability, and AWS-scale data infrastructure.</h2>
+        </div>
+        <a class="button button-primary" href="mailto:rohankumardubey497@gmail.com">Email Rohan</a>
+      </section>
+    </main>
 
-        // draw glyphs
-        ctx.fillStyle = "#31FF74";
-        for (let i = 0; i < drops.length; i++) {
-          const text = glyphArr[Math.floor(Math.random() * glyphArr.length)];
-          const x = i * 18;
-          const y = drops[i] * 18;
-          ctx.fillText(text, x, y);
+    <footer class="site-footer">
+      <p>Rohan Kumar Dubey</p>
+      <p>Senior Data Engineer | Streaming Systems | AWS Data Platforms</p>
+      <p id="footer-year"></p>
+    </footer>
+  </div>
 
-          // reset drop randomly after it passes bottom
-          if (y > h && Math.random() > 0.975) drops[i] = 0;
-          drops[i] += (Math.random() * 0.8) + 0.6; // variable speed
-        }
-        requestAnimationFrame(draw);
-      }
-      requestAnimationFrame(draw);
-    })();
-  </script>
+  <script src="./script.js"></script>
 </body>
 </html>
