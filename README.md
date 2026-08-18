@@ -1,6 +1,6 @@
 # Portfolio Website
 
-Static professional portfolio for Rohan Kumar Dubey, designed to deploy directly on GitHub Pages.
+Static professional portfolio for Rohan Kumar Dubey, Staff Data Engineer, designed to deploy directly on GitHub Pages.
 
 ## Files
 
@@ -8,6 +8,7 @@ Static professional portfolio for Rohan Kumar Dubey, designed to deploy directly
 - `styles.css` - responsive visual design
 - `script.js` - small reveal animations and footer date
 - `favicon.svg` - monogram favicon for browser tabs
+- `og.png` - social preview image for shared links
 - `.nojekyll` - prevents Jekyll processing on GitHub Pages
 
 ## Run locally
