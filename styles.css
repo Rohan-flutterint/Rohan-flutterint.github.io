@@ -1854,6 +1854,7 @@ button:focus-visible {
 .closing-banner h2 { max-width: 13ch; color: #f8fafc; font-family: "Manrope", sans-serif; font-size: clamp(2.8rem, 5vw, 5.5rem); font-weight: 650; letter-spacing: -0.07em; }
 .closing-banner .section-intro { color: #94a3b8; }
 .closing-banner > div { position: relative; z-index: 2; }
+.closing-banner .closing-actions { transform: translateY(clamp(3.75rem, 5vw, 6rem)); }
 
 .site-footer { align-items: center; padding: 2rem 0 0.5rem; color: #64748b; font-size: 0.8rem; }
 
@@ -1889,6 +1890,7 @@ button:focus-visible {
   .github-stat-streak { grid-column: auto; }
   .project-entry { min-height: 18rem; }
   .closing-banner { min-height: 24rem; }
+  .closing-banner .closing-actions { margin-top: 1.5rem; transform: none; }
   .closing-banner::after { opacity: 0.45; transform: scale(0.72); transform-origin: right top; }
 }
 
